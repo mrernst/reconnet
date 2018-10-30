@@ -1,6 +1,7 @@
 ### README for ReCoNNet
+ReCoNNet is short for Recurrent Convolutional Neural Network
 
-##### Information
+#### Information
 
 This is an implementation in tensorflow of the network models used in the thesis "Recurrent Convolutional Neural Network for Occluded Object Recognition". In order to use it you need to have the following packages installed.
 
@@ -9,7 +10,7 @@ This is an implementation in tensorflow of the network models used in the thesis
 *
 
 
-##### Usage
+#### Usage
 
 To use the network simply clone the repository and start with
 python3 reconnet.py
