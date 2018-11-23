@@ -67,6 +67,8 @@ tf.app.flags.DEFINE_boolean('batchnorm', True,
                            'indicate whether BatchNormalization should be used, default True')
 tf.app.flags.DEFINE_float('learning_rate', 0.003,
                            'specify the learning rate')
+tf.app.flags.DEFINE_float('keep_prob', 1.0,
+                           'dropout parameter for regularization, between 0 and 1.0, default 1 (off)')
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -100,6 +102,7 @@ inp = m.PlaceholderModule("input", (BATCH_SIZE, IMAGE_HEIGHT, \
   IMAGE_WIDTH, IMAGE_CHANNELS), dtype='uint8')
 labels = m.PlaceholderModule("input_labels", (BATCH_SIZE, \
   CLASSES), dtype=DTYPE)
+keep_prob = m.ConstantPlaceholderModule("keep_prob", shape=(), dtype=DTYPE)
 is_training = m.ConstantPlaceholderModule("is_training", shape=(), dtype=tf.bool)
 
 
@@ -184,7 +187,7 @@ dataset = get_mnist.MNIST()
 # initialize classes with parameters
 # -----
 
-network = networks.ReCoNNet("ReCoNNet", is_training.placeholder, activations, conv_filter_shapes, bias_shapes, ksizes, pool_strides, topdown_filter_shapes, topdown_output_shapes, FLAGS)
+network = networks.ReCoNNet("ReCoNNet", is_training.placeholder, activations, conv_filter_shapes, bias_shapes, ksizes, pool_strides, topdown_filter_shapes, topdown_output_shapes, keep_prob.placeholder, FLAGS)
 
 one_time_error = m.ErrorModule("cross_entropy", CROSSENTROPY_FN)
 error = m.TimeAddModule("add_error")
@@ -329,7 +332,7 @@ with tf.Session() as sess:
     while True:
       try:
         batch = data.next_batch(BATCH_SIZE)
-        _ = sess.run([update], feed_dict = {inp.placeholder: batch[0] , labels.placeholder: batch[label_index], is_training.placeholder: False})
+        _ = sess.run([update], feed_dict = {inp.placeholder: batch[0] , labels.placeholder: batch[label_index], is_training.placeholder: False, keep_prob.placeholder: 1.0})
       except (EOFError):
         break
     acc, loss, summary = sess.run([average_accuracy[TIME_DEPTH], average_cross_entropy[TIME_DEPTH], test_merged])
@@ -344,7 +347,7 @@ with tf.Session() as sess:
     while True:
       try:
         batch = dataset.train.next_batch(BATCH_SIZE)
-        summary, loss, acc, target, output = sess.run([train_merged, optimizer.outputs[TIME_DEPTH], accuracy.outputs[TIME_DEPTH], labels.outputs, network.outputs[TIME_DEPTH]], feed_dict = {inp.placeholder: batch[0] , labels.placeholder: batch[label_index], is_training.placeholder: True})
+        summary, loss, acc, target, output = sess.run([train_merged, optimizer.outputs[TIME_DEPTH], accuracy.outputs[TIME_DEPTH], labels.outputs, network.outputs[TIME_DEPTH]], feed_dict = {inp.placeholder: batch[0] , labels.placeholder: batch[label_index], is_training.placeholder: True, keep_prob.placeholder:FLAGS.keep_prob})
         if (train_it % FLAGS.writeevery == 0):
           train_writer.add_summary(summary, train_it)
         if FLAGS.verbose:

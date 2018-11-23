@@ -33,7 +33,7 @@ def lrn_relu(x, name=None, depth_radius=5, bias=1, alpha=1e-4, beta=0.5):
 # -----
         
 class ReCoNNet(m.ComposedModule):
-  def define_inner_modules(self, name, is_training, activations, conv_filter_shapes, bias_shapes, ksizes, pool_strides, topdown_filter_shapes, topdown_output_shapes, FLAGS):
+  def define_inner_modules(self, name, is_training, activations, conv_filter_shapes, bias_shapes, ksizes, pool_strides, topdown_filter_shapes, topdown_output_shapes, keep_prob, FLAGS):
 
     # create all modules of the network
     # -----
@@ -55,6 +55,8 @@ class ReCoNNet(m.ComposedModule):
       self.layers["lateral0_batchnorm"] = m.BatchNormalizationModule("lateral0_batchnorm", lateral_filter_shape[-1], is_training, beta_init=0.0, gamma_init=0.1, ema_decay_rate=0.5, moment_axes=[0,1,2], variance_epsilon=1e-3)
     with tf.name_scope('pooling_layer_0'):
       self.layers["pool0"] = m.MaxPoolingModule("pool0", ksizes[0], pool_strides[0])
+    with tf.name_scope('dropout_layer_0'):
+      self.layers['dropoutc0'] = m.DropoutModule('dropoutc0', keep_prob=keep_prob)
     with tf.name_scope('convolutional_layer_1'):
       if FLAGS.batchnorm:
         self.layers["conv1"] = m.TimeConvolutionalLayerWithBatchNormalizationModule("conv1", bias_shapes[1][-1], is_training, 0.0, 1.0, 0.5, activations[1], conv_filter_shapes[1], [1,1,1,1], bias_shapes[1])
@@ -73,6 +75,8 @@ class ReCoNNet(m.ComposedModule):
     with tf.name_scope('pooling_layer_1'):
       self.layers["pool1"] = m.MaxPoolingModule("pool1", ksizes[1], pool_strides[1])
       self.layers["flatpool1"] = m.FlattenModule("flatpool1")
+    with tf.name_scope('dropout_layer_1'):
+      self.layers['dropoutc1'] = m.DropoutModule('dropoutc1', keep_prob=keep_prob)
     with tf.name_scope('fully_connected_layer_0'):
        if FLAGS.batchnorm:
          self.layers["fc0"] = m.FullyConnectedLayerWithBatchNormalizationModule("fc0", bias_shapes[-1][-1], is_training, 0.0, 1.0, 0.5, activations[2], int(np.prod(np.array(bias_shapes[1]) / np.array(pool_strides[1]))), np.prod(bias_shapes[2]))
@@ -86,9 +90,11 @@ class ReCoNNet(m.ComposedModule):
     with tf.name_scope('wiring_of_modules'):
       self.layers["conv0"].add_input(self.layers["inp_norm"], 0)
       self.layers["pool0"].add_input(self.layers["conv0"])
-      self.layers["conv1"].add_input(self.layers["pool0"], 0)
+      self.layers["dropoutc0"].add_input(self.layers["pool0"])
+      self.layers["conv1"].add_input(self.layers["dropoutc0"], 0)
       self.layers["pool1"].add_input(self.layers["conv1"])
-      self.layers["flatpool1"].add_input(self.layers["pool1"])
+      self.layers["dropoutc1"].add_input(self.layers["pool1"])
+      self.layers["flatpool1"].add_input(self.layers["dropoutc1"])
       self.layers["fc0"].add_input(self.layers["flatpool1"])
       if "L" in FLAGS.architecture:
         if FLAGS.batchnorm:
