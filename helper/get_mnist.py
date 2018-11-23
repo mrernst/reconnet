@@ -54,7 +54,7 @@ def add_occluders(image_batch, batch_size, number_of_occluders, sig=2/28*5):
     mux = numpy.random.uniform(-1,1,batch_size)
     muy = numpy.random.uniform(-1,1,batch_size) 
     d = numpy.sqrt((x-mux)*(x-mux)+(y-muy)*(y-muy))
-    g = np.heaviside((d-sig), 0)
+    g = numpy.heaviside((d-sig), 0)
     # tests with gaussian
     #g = numpy.exp(-( (d)**2 / ( 2.0 * sigma**2 ) ) )
     #g = numpy.heaviside(numpy.round(g,3), 0)
