@@ -35,7 +35,6 @@ def extract_data(filename, num_images):
     data = data.reshape(num_images, IMAGE_SIZE, IMAGE_SIZE, 1)
     return data
 
-
 def extract_labels(filename, num_images):
   """Extract the labels into a vector of int64 label IDs."""
   with gzip.open(filename) as bytestream:
@@ -44,6 +43,22 @@ def extract_labels(filename, num_images):
     labels = numpy.frombuffer(buf, dtype=numpy.uint8).astype(numpy.int64)
   return labels
 
+def add_occluders(image_batch, batch_size, number_of_occluders, sig=1):
+  #generate occluder gaussian
+  x, y = numpy.meshgrid(numpy.linspace(-1,1,IMAGE_SIZE), numpy.linspace(-1,1,IMAGE_SIZE))
+  x = numpy.repeat(x[...,numpy.newaxis], batch_size, axis=2)
+  y = numpy.repeat(y[...,numpy.newaxis], batch_size, axis=2)
+  
+  for occ in range(number_of_occluders):
+    sigma = numpy.ones(batch_size)*sig
+    mux = numpy.random.uniform(-1,1,batch_size)
+    muy = numpy.random.uniform(-1,1,batch_size) 
+    d = numpy.sqrt((x-mux)*(x-mux)+(y-muy)*(y-muy))
+    g = 1. - numpy.exp(-( (d)**2 / ( 2.0 * sigma**2 ) ) )
+    g = numpy.expand_dims(numpy.swapaxes(g,0,-1), axis=-1)
+    image_batch = numpy.multiply(image_batch,g)
+  
+  return image_batch
 
 class MNIST:
   def __init__(self, img_height=IMAGE_SIZE, img_width=IMAGE_SIZE):

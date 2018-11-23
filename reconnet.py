@@ -54,6 +54,8 @@ tf.app.flags.DEFINE_string('input_type', 'monocular',
                            '(monocular, binocular) indicate whether you want to use a stereo dataset')
 tf.app.flags.DEFINE_string('label_type', 'onehot',
                            '(onehot, nhot) indicate whether you want to use onehot oder nhot encoding')
+tf.app.flags.DEFINE_integer('n_occluders', 5,
+                           'number of occluding objects')
 # architecture specific
 tf.app.flags.DEFINE_string('architecture', 'BL',
                            'architecture of the network, see Spoerer paper: B, BF, BK, BL, BT, BLT')
@@ -332,7 +334,9 @@ with tf.Session() as sess:
     while True:
       try:
         batch = data.next_batch(BATCH_SIZE)
-        _ = sess.run([update], feed_dict = {inp.placeholder: batch[0] , labels.placeholder: batch[label_index], is_training.placeholder: False, keep_prob.placeholder: 1.0})
+        prepbatch = get_mnist.add_occluders(batch[0],BATCH_SIZE,FLAGS.n_occluders)
+        
+        _ = sess.run([update], feed_dict = {inp.placeholder: prepbatch , labels.placeholder: batch[label_index], is_training.placeholder: False, keep_prob.placeholder: 1.0})
       except (EOFError):
         break
     acc, loss, summary = sess.run([average_accuracy[TIME_DEPTH], average_cross_entropy[TIME_DEPTH], test_merged])
@@ -347,7 +351,8 @@ with tf.Session() as sess:
     while True:
       try:
         batch = dataset.train.next_batch(BATCH_SIZE)
-        summary, loss, acc, target, output = sess.run([train_merged, optimizer.outputs[TIME_DEPTH], accuracy.outputs[TIME_DEPTH], labels.outputs, network.outputs[TIME_DEPTH]], feed_dict = {inp.placeholder: batch[0] , labels.placeholder: batch[label_index], is_training.placeholder: True, keep_prob.placeholder:FLAGS.keep_prob})
+        prepbatch = get_mnist.add_occluders(batch[0],BATCH_SIZE,FLAGS.n_occluders)
+        summary, loss, acc, target, output = sess.run([train_merged, optimizer.outputs[TIME_DEPTH], accuracy.outputs[TIME_DEPTH], labels.outputs, network.outputs[TIME_DEPTH]], feed_dict = {inp.placeholder: prepbatch , labels.placeholder: batch[label_index], is_training.placeholder: True, keep_prob.placeholder:FLAGS.keep_prob})
         if (train_it % FLAGS.writeevery == 0):
           train_writer.add_summary(summary, train_it)
         if FLAGS.verbose:
