@@ -43,7 +43,7 @@ def extract_labels(filename, num_images):
     labels = numpy.frombuffer(buf, dtype=numpy.uint8).astype(numpy.int64)
   return labels
 
-def add_occluders(image_batch, batch_size, number_of_occluders, sig=0.1):
+def add_occluders(image_batch, batch_size, number_of_occluders, sig=2/28*5):
   #generate occluder gaussian
   x, y = numpy.meshgrid(numpy.linspace(-1,1,IMAGE_SIZE), numpy.linspace(-1,1,IMAGE_SIZE))
   x = numpy.repeat(x[...,numpy.newaxis], batch_size, axis=2)
@@ -54,12 +54,13 @@ def add_occluders(image_batch, batch_size, number_of_occluders, sig=0.1):
     mux = numpy.random.uniform(-1,1,batch_size)
     muy = numpy.random.uniform(-1,1,batch_size) 
     d = numpy.sqrt((x-mux)*(x-mux)+(y-muy)*(y-muy))
-    g = numpy.exp(-( (d)**2 / ( 2.0 * sigma**2 ) ) )
-    g = numpy.heaviside(numpy.round(g,3), 0)
+    g = np.heaviside((d-sig), 0)
+    # tests with gaussian
+    #g = numpy.exp(-( (d)**2 / ( 2.0 * sigma**2 ) ) )
+    #g = numpy.heaviside(numpy.round(g,3), 0)
     g = 1 - g
     g = numpy.expand_dims(numpy.swapaxes(g,0,-1), axis=-1)
     image_batch = numpy.multiply(image_batch,g)
-  
   return image_batch
 
 class MNIST:
