@@ -165,7 +165,7 @@ ARCHITECTURE_STRING += '_bs{}'.format(FLAGS.batchsize)
 ARCHITECTURE_STRING += '_lr{}'.format(FLAGS.learning_rate)
 # data string
 DATA_STRING = ''
-DATA_STRING += "{}_0occ_0p_0cm".format(FLAGS.dataset)
+DATA_STRING += "{}_{}occ_Xp_0cm".format(FLAGS.dataset, FLAGS.n_occluders)
 # format string
 FORMAT_STRING = ''
 FORMAT_STRING += '{}x{}'.format(IMAGE_HEIGHT, IMAGE_WIDTH)
