@@ -54,7 +54,7 @@ tf.app.flags.DEFINE_string('input_type', 'monocular',
                            '(monocular, binocular) indicate whether you want to use a stereo dataset')
 tf.app.flags.DEFINE_string('label_type', 'onehot',
                            '(onehot, nhot) indicate whether you want to use onehot oder nhot encoding')
-tf.app.flags.DEFINE_integer('n_occluders', 5,
+tf.app.flags.DEFINE_integer('n_occluders', 3,
                            'number of occluding objects')
 # architecture specific
 tf.app.flags.DEFINE_string('architecture', 'BL',
