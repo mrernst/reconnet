@@ -58,7 +58,7 @@ def add_occluders(image_batch, batch_size, number_of_occluders, sig=2/28*5):
     # tests with gaussian
     #g = numpy.exp(-( (d)**2 / ( 2.0 * sigma**2 ) ) )
     #g = numpy.heaviside(numpy.round(g,3), 0)
-    g = 1 - g
+    #g = 1 - g
     g = numpy.expand_dims(numpy.swapaxes(g,0,-1), axis=-1)
     image_batch = numpy.multiply(image_batch,g)
   return image_batch
