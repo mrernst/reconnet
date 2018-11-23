@@ -43,7 +43,7 @@ def extract_labels(filename, num_images):
     labels = numpy.frombuffer(buf, dtype=numpy.uint8).astype(numpy.int64)
   return labels
 
-def add_occluders(image_batch, batch_size, number_of_occluders, sig=2/28*5):
+def add_occluders(image_batch, batch_size, number_of_occluders, sig=2/28*7):
   #generate occluder gaussian
   x, y = numpy.meshgrid(numpy.linspace(-1,1,IMAGE_SIZE), numpy.linspace(-1,1,IMAGE_SIZE))
   x = numpy.repeat(x[...,numpy.newaxis], batch_size, axis=2)
@@ -64,7 +64,7 @@ def add_occluders(image_batch, batch_size, number_of_occluders, sig=2/28*5):
   return image_batch
 
 class MNIST:
-  def __init__(self, img_height=IMAGE_SIZE, img_width=IMAGE_SIZE):
+  def __init__(self, img_height=IMAGE_SIZE, img_width=IMAGE_SIZE, n_occ=0):
     train_images_name = "train-images-idx3-ubyte.gz"  #  training set images (9912422 bytes)
     train_data_filename = maybe_download(train_images_name)
     train_mnist = extract_data(train_data_filename, 60000)
@@ -81,6 +81,12 @@ class MNIST:
     test_label_filename = maybe_download(test_label_name)
     test_mnist_label = extract_labels(test_label_filename, 5000)
     
+    # add occluders
+    if n_occ > 0:
+      print('[INFO]: Preparing occluded MNIST')
+      train_mnist = add_occluders(train_mnist, 60000, n_occ)
+      test_mnist = add_occluders(test_mnist, 5000, n_occ)
+      
     self.train = Train(images=train_mnist, labels=train_mnist_label, binlabels=train_mnist_label, img_height=img_height, img_width=img_width)
     self.validation = Test(images=test_mnist, labels=test_mnist_label, binlabels=test_mnist_label, img_height=img_height, img_width=img_width)
     self.test = Test(images=test_mnist, labels=test_mnist_label, binlabels=test_mnist_label, img_height=img_height, img_width=img_width)

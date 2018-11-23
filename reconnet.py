@@ -183,7 +183,7 @@ if not os.path.exists(CHECKPOINT_DIRECTORY):
 # -----
 
 # parse data from files using get_digits
-dataset = get_mnist.MNIST()
+dataset = get_mnist.MNIST(n_occ = FLAGS.n_occluders)
 
 
 # initialize classes with parameters
@@ -333,10 +333,8 @@ with tf.Session() as sess:
     sess.run([reset])
     while True:
       try:
-        batch = data.next_batch(BATCH_SIZE)
-        prepbatch = get_mnist.add_occluders(batch[0],BATCH_SIZE,FLAGS.n_occluders)
-        
-        _ = sess.run([update], feed_dict = {inp.placeholder: prepbatch , labels.placeholder: batch[label_index], is_training.placeholder: False, keep_prob.placeholder: 1.0})
+        batch = data.next_batch(BATCH_SIZE)        
+        _ = sess.run([update], feed_dict = {inp.placeholder: batch[0] , labels.placeholder: batch[label_index], is_training.placeholder: False, keep_prob.placeholder: 1.0})
       except (EOFError):
         break
     acc, loss, summary = sess.run([average_accuracy[TIME_DEPTH], average_cross_entropy[TIME_DEPTH], test_merged])
@@ -351,8 +349,7 @@ with tf.Session() as sess:
     while True:
       try:
         batch = dataset.train.next_batch(BATCH_SIZE)
-        prepbatch = get_mnist.add_occluders(batch[0],BATCH_SIZE,FLAGS.n_occluders)
-        summary, loss, acc, target, output = sess.run([train_merged, optimizer.outputs[TIME_DEPTH], accuracy.outputs[TIME_DEPTH], labels.outputs, network.outputs[TIME_DEPTH]], feed_dict = {inp.placeholder: prepbatch , labels.placeholder: batch[label_index], is_training.placeholder: True, keep_prob.placeholder:FLAGS.keep_prob})
+        summary, loss, acc, target, output = sess.run([train_merged, optimizer.outputs[TIME_DEPTH], accuracy.outputs[TIME_DEPTH], labels.outputs, network.outputs[TIME_DEPTH]], feed_dict = {inp.placeholder: batch[0] , labels.placeholder: batch[label_index], is_training.placeholder: True, keep_prob.placeholder:FLAGS.keep_prob})
         if (train_it % FLAGS.writeevery == 0):
           train_writer.add_summary(summary, train_it)
         if FLAGS.verbose:
