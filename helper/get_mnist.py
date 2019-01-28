@@ -97,6 +97,7 @@ class Train:
   pt = 0
   def __init__(self, images, labels, binlabels, img_height, img_width):
       self.images = images
+      self.labels = labels
       self.onehot = list(map(lambda x: [1 if i == x else 0 for i in range(10)], labels[:]))
       self.nhot = list(map(lambda x: [1 if i == x else 0 for i in range(10)], labels[:])) #binlabels
 
@@ -114,6 +115,7 @@ class Test:
   pt = 0
   def __init__(self, images, labels, binlabels, img_height, img_width):
       self.images = images
+      self.labels = labels
       self.onehot = list(map(lambda x: [1 if i == x else 0 for i in range(10)], labels[:]))
       self.nhot = list(map(lambda x: [1 if i == x else 0 for i in range(10)], labels[:])) #binlabels
 

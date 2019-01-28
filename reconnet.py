@@ -1,5 +1,5 @@
 # implementation of a Recurrent Neural Network inspired by Spoerer, McClure and Kriegeskorte
-# Markus Ernst, October 2018
+# Markus Ernst, December 2018
 
 
 # import standard libraries
@@ -185,7 +185,6 @@ if not os.path.exists(CHECKPOINT_DIRECTORY):
 # parse data from files using get_digits
 dataset = get_mnist.MNIST(n_occ = FLAGS.n_occluders)
 
-
 # initialize classes with parameters
 # -----
 
@@ -317,7 +316,7 @@ with tf.Session() as sess:
 
   train_merged = tf.summary.merge(TRAIN_SUMMARIES)
   test_merged = tf.summary.merge(TEST_SUMMARIES)
- 
+
   train_writer = tf.summary.FileWriter(RESULT_DIRECTORY + '/train', sess.graph)
   test_writer = tf.summary.FileWriter(RESULT_DIRECTORY + '/validation')
 
@@ -333,7 +332,7 @@ with tf.Session() as sess:
     sess.run([reset])
     while True:
       try:
-        batch = data.next_batch(BATCH_SIZE)        
+        batch = data.next_batch(BATCH_SIZE)
         _ = sess.run([update], feed_dict = {inp.placeholder: batch[0] , labels.placeholder: batch[label_index], is_training.placeholder: False, keep_prob.placeholder: 1.0})
       except (EOFError):
         break
