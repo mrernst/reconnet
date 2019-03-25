@@ -412,6 +412,7 @@ class MaxPoolingModule(OperationModule):
 
 
 
+
 class FlattenModule(OperationModule):
   """
   FlattenModule inherits from OperationModule. It takes a single input module and
@@ -672,7 +673,7 @@ class NormalizationModule(OperationModule):
       ?:                    tensor, same shape as x
     """
     casted_x = tf.cast(x, dtype=self.dtype)
-    rescaled_x = (casted_x / 255) * (self.inp_max - self.inp_min) - self.inp_min
+    rescaled_x = (casted_x / 255) * (self.inp_max - self.inp_min) -  tf.cast(abs(self.inp_min), dtype=self.dtype)
     return rescaled_x
 
 
@@ -1398,6 +1399,168 @@ class AugmentCropModule(OperationModule):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MaxPoolingWithArgmaxModule(OperationModule):
+  """
+  MaxPoolingWithArgmaxModule inherits from OperationModule. It takes a single input module and
+  performs a maxpooling with argmax operation
+  """
+  def __init__(self, name, ksize, strides, padding='SAME'):
+    """
+    Creates a MaxPoolingWithArgmaxModule object
+
+    Args:
+      name:                 string, name of the Module
+      ksize:
+      strides:
+      padding:
+    """
+    super().__init__(name, ksize, strides, padding)
+    self.ksize = ksize
+    self.strides = strides
+    self.padding = padding
+
+
+  def operation(self, x):
+    """
+    operation takes a MaxPoolingModule and x, a 4D tensor and performs a maxpooling of
+    the input module in the current time slice
+
+    Args:
+      x:                    4D tensor (BHWD)
+    Returns:
+      ?
+    """
+    out, mask = tf.nn.max_pool_with_argmax(x, self.ksize, self.strides, self.padding, name=self.name)
+    self.mask = tf.stop_gradient(mask)
+    return out
+
+
+
+
+
+
+class UnpoolingModule(OperationModule):
+  """
+  UnpoolingModule inherits from OperationModule. It takes a exactly two input modules and
+  performs an unpooling operation
+  """
+  def __init__(self, name, ksize, strides, padding='SAME'):
+    """
+    Creates a UnpoolingModule object
+
+    Args:
+      name:                 string, name of the Module
+      ksize:
+      strides:
+      padding:
+    """
+    super().__init__(name, ksize, strides, padding)
+    self.ksize = ksize
+    self.strides = strides
+    self.padding = padding
+  
+  def operation(self, *args):
+    """
+    operation takes a UnpoolingModule, a 4D tensor and|or a MaxPoolingWithArgmaxModule and performs a maxpooling of
+    the input module in the current time slice
+
+    Args:
+      x:                    4D tensor (BHWD)
+    Returns:
+      unpooled:             unpooled version of the input tensor
+    """
+    MaxArgMax, _ = self.inputs[-1]
+    argmax = MaxArgMax.mask
+    x = args[0]
+    
+    
+    unpool_shape=None
+    batch_size=None
+    
+    x_shape = x.get_shape().as_list()
+    argmax_shape = argmax.get_shape().as_list()
+    assert not(x_shape[0] is None and batch_size is None), "must input batch_size if number of batch is alterable"
+    if x_shape[0] is None:
+        x_shape[0] = batch_size
+    if argmax_shape[0] is None:
+        argmax_shape[0] = x_shape[0]
+    if unpool_shape is None:
+        unpool_shape = [x_shape[i] * self.strides[i] for i in range(4)]
+        self.unpool_shape = unpool_shape
+    elif unpool_shape[0] is None:
+        unpool_shape[0] = batch_size
+    unpool = tf.get_variable(name=self.name, shape=[np.prod(unpool_shape)], initializer=tf.zeros_initializer(), trainable=False)
+    self.unpool = unpool
+    argmax = tf.cast(argmax, tf.int32)
+    argmax = tf.reshape(argmax, [np.prod(argmax_shape)])
+    x = tf.reshape(x, [np.prod(argmax.get_shape().as_list())])
+    unpool = tf.scatter_update(unpool, argmax, x)
+    unpool = tf.reshape(unpool, unpool_shape)
+    return unpool
+    
+    
+    
+    
+class UnConvolutionModule(OperationModule):
+  """
+  Conv2DTransposeModule inherits from VariableModule. It takes a single input module
+  and performs a deconvolution.
+  """
+  def __init__(self, name, filter_shape, strides, output_shape, padding='SAME'):
+    """
+    Creates a Conv2DTransposeModule object
+
+    Args:
+      name:               string, name of the module
+      filter_shape:       array, defines the shape of the filter
+      output_shape:       array, output shape of the deconvolution op
+      strides:            list of ints length 4, stride of the sliding window for each dimension of input
+      padding:            string from: "SAME", "VALID", type of padding algorithm to use.
+
+    For more information see tf.nn.conv2d_transpose
+    """
+
+    self.filter_shape = filter_shape
+    super().__init__(name, filter_shape, strides, output_shape, padding)
+    self.strides = strides
+    self.output_shape = output_shape
+    self.padding = padding
+
+
+  def operation(self, *args):
+    """
+    operation takes a Conv2DTransposeModule and x, a 4D tensor and performs a deconvolution of the input module
+    in the current time slice
+
+    Args:
+      x:                    4D tensor (BHWD)
+    Returns:
+      ?
+    """
+    C2D, _ = self.inputs[-1]
+    weights = C2D.conv.weights
+    x = args[0]
+
+    return tf.nn.conv2d_transpose(x, weights, self.output_shape,
+                                    strides=self.strides, padding=self.padding, name=self.name)
 
 if __name__ == '__main__':
 
