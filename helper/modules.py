@@ -683,7 +683,7 @@ class OptimizerModule(OperationModule):
   and can be used to train a network
   """
 
-  def __init__(self, name, optimizer):
+  def __init__(self, name, optimizer, var_list=None):
     """
     Creates OptimizerModule object
 
@@ -693,6 +693,7 @@ class OptimizerModule(OperationModule):
     """
     super().__init__(name, optimizer)
     self.optimizer = optimizer
+    self.var_list = var_list
 
   def operation(self, x):
     """
@@ -705,7 +706,7 @@ class OptimizerModule(OperationModule):
     Returns:
       ?:                    tensor x
     """
-    with tf.control_dependencies([self.optimizer.minimize(x)]):
+    with tf.control_dependencies([self.optimizer.minimize(x, var_list=self.var_list)]):
       ret = tf.identity(x, name=self.name)
     return ret
 
@@ -1403,16 +1404,32 @@ class AugmentCropModule(OperationModule):
 
 
 
+#######################
+## experimental modules
+#######################
 
-
-
-
-
-
-
-
-
-
+class InputCanvasModule(OperationModule):
+  """
+  InputCanvasModule is an abstract class. It inherits from OperationModule and takes no input.
+  It holds a place where the user can feed in a value to be used in the graph.
+  """
+  def __init__(self, name, shape, trainable_input, dtype=tf.float32):
+    super().__init__(name, shape, trainable_input, dtype)
+    self.shape = shape
+    self.dtype = dtype
+    self.trainable_input = trainable_input
+    self.placeholder = tf.placeholder(shape=shape, dtype=dtype, name=self.name)
+    self.canvas = tf.Variable(tf.truncated_normal(shape=self.shape, stddev=0.1), name=name)
+    #self.canvas = tf.Variable(tf.zeros(shape=self.shape), name=name)
+    
+  def operation(self):
+    def return_placeholder():
+      return tf.cast(self.placeholder, tf.float32)
+    def return_trainable_input():
+      return self.canvas
+    
+    ret = tf.cond(self.trainable_input, return_trainable_input, return_placeholder)
+    return ret
 
 
 
@@ -1515,8 +1532,6 @@ class UnpoolingModule(OperationModule):
     unpool = tf.scatter_update(unpool, argmax, x)
     unpool = tf.reshape(unpool, unpool_shape)
     return unpool
-    
-    
     
     
 class UnConvolutionModule(OperationModule):
