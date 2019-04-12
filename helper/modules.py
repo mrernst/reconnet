@@ -1400,18 +1400,11 @@ class AugmentCropModule(OperationModule):
 
 
 
-
-
-
-
-#######################
-## experimental modules
-#######################
-
 class InputCanvasModule(OperationModule):
   """
   InputCanvasModule is an abstract class. It inherits from OperationModule and takes no input.
-  It holds a place where the user can feed in a value to be used in the graph.
+  It holds a place where the user can feed in a value to be used in the graph. Additionally
+  it creates a trainable variable of the same size to visualize network internals.
   """
   def __init__(self, name, shape, trainable_input, dtype=tf.float32):
     super().__init__(name, shape, trainable_input, dtype)
