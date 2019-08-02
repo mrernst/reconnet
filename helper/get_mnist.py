@@ -61,6 +61,8 @@ def add_occluders(image_batch, batch_size, number_of_occluders, sig=2/28*7):
     #g = 1 - g
     g = numpy.expand_dims(numpy.swapaxes(g,0,-1), axis=-1)
     image_batch = numpy.multiply(image_batch,g)
+    # MNIST is defined on -1 to +1, but occ should no activity
+    ##image_batch -= (1-g)
   return image_batch
 
 class MNIST:

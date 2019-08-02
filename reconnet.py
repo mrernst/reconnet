@@ -99,9 +99,8 @@ TRAIN_SUMMARIES = []
 ADDITIONAL_SUMMARIES = []
 IMAGE_SUMMARIES = []
 
-
 inp = m.PlaceholderModule("input", (BATCH_SIZE, IMAGE_HEIGHT, \
-  IMAGE_WIDTH, IMAGE_CHANNELS), dtype='uint8')
+  IMAGE_WIDTH, IMAGE_CHANNELS), dtype=tf.float32)
 labels = m.PlaceholderModule("input_labels", (BATCH_SIZE, \
   CLASSES), dtype=DTYPE)
 keep_prob = m.ConstantPlaceholderModule("keep_prob", shape=(), dtype=DTYPE)
